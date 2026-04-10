@@ -1,5 +1,6 @@
 name: 地志
 options:
+  version: "1.0"
   bundleIdPrefix: com.dizhi
   deploymentTarget:
     iOS: 16.0
@@ -20,13 +21,13 @@ targets:
           - "*.yml"
           - "*.md"
           - "*.sh"
+          - "ExportOptions.plist"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dizhi.app
         PRODUCT_NAME: 地志
-        TARGETED_DEVICE_FAMILY: 1,2  # iPhone and iPad
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ENABLE_BITCODE: NO
         IPHONEOS_DEPLOYMENT_TARGET: 16.0
@@ -42,9 +43,11 @@ targets:
         CFBundleShortVersionString: 1.0
         CFBundleVersion: 1
         LSRequiresIPhoneOS: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
         UIApplicationSupportsIndirectInputEvents: true
         UILaunchScreen: {}
-        UIRequiredDeviceCapabilities: [armv7]
+        UIRequiredDeviceCapabilities: ["armv7"]
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -64,9 +67,3 @@ schemes:
       config: Debug
     archive:
       config: Release
-    analyze:
-      config: Debug
-    profile:
-      config: Release
-    test:
-      config: Debug
