@@ -18,10 +18,25 @@ jobs:
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
           
-      - name: Create IPA package
+      - name: Install XcodeGen
+        run: brew install xcodegen
+          
+      - name: Generate Xcode project
+        run: xcodegen generate
+          
+      - name: Build and Archive
+        run: |
+          xcodebuild archive \
+            -project 地志.xcodeproj \
+            -scheme 地志 \
+            -archivePath build/地志.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+          
+      - name: Export IPA
         run: |
           mkdir -p Payload
-          echo "地志 iOS App - 测试版本" > Payload/Info.txt
+          cp -r build/地志.xcarchive/Products/Applications/地志.app Payload/
           zip -r 地志_TrollStore.ipa Payload/
           
       - name: Upload IPA
