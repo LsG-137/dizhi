@@ -1,6 +1,6 @@
 import Foundation
 
-class DataProvider {
+class DataProvider: ObservableObject  {
     static let shared = DataProvider()
 
     private(set) var places: [Place] = []
