@@ -12,7 +12,7 @@ enum AppColors {
 
     // 强调色：朱砂红 #C0392B
     static let vermilion = Color(hex: "#C0392B")
-
+static let vermillion = vermilion
     // 已访问标记色：青色 #2E86AB
     static let visitedCyan = Color(hex: "#2E86AB")
 
