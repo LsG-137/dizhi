@@ -10,23 +10,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Create iOS App
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      
+      - name: Generate Xcode project
         run: |
           cd 地志
-          
-          # 创建临时 Xcode 项目
-          mkdir -p 地志.xcodeproj
-          
-          # 编译所有 Swift 文件
-          swiftc -parse-as-library -target arm64-apple-ios16.0 \
-            -emit-library -o lib地志.a \
-            *.swift || echo "Compilation attempted"
-          
-          # 创建 IPA 结构
-          mkdir -p Payload/地志.app
-          echo "#!/bin/bash" > Payload/地志.app/地志
-          chmod +x Payload/地志.app/地志
-          echo "地志 App - 测试版本" > Payload/地志.app/info.txt
+          xcodegen generate
+          ls -la 地志.xcodeproj
+      
+      - name: Build and Archive
+        run: |
+          cd 地志
+          xcodebuild archive \
+            -project 地志.xcodeproj \
+            -scheme 地志 \
+            -archivePath build/地志.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            -destination generic/platform=iOS
+      
+      - name: Export IPA
+        run: |
+          cd 地志
+          mkdir -p Payload
+          cp -r build/地志.xcarchive/Products/Applications/地志.app Payload/
           zip -r 地志_TrollStore.ipa Payload/
           
       - uses: actions/upload-artifact@v4
