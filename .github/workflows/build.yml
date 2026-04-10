@@ -18,41 +18,6 @@ jobs:
           sudo xcode-select -switch /Applications/Xcode.app
           xcodebuild -version
           
-      - name: Build iOS App
-        run: |
-          # 创建简单的 Info.plist
-          cat > Info.plist << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleExecutable</key>
-    <string>dizhi</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.dizhi.app</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>地志</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>UIDeviceFamily</key>
-    <array>
-        <integer>1</integer>
-        <integer>2</integer>
-    </array>
-</dict>
-</plist>
-EOF
-          
       - name: Create IPA package
         run: |
           mkdir -p Payload
