@@ -1,0 +1,21 @@
+name: Build IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          echo "test" > Payload/test.txt
+          zip -r app.ipa Payload/
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-ipa
+          path: app.ipa
