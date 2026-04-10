@@ -22,11 +22,13 @@ targets:
           - "*.md"
           - "*.sh"
           - "ExportOptions.plist"
+          - "Info.plist"  # 这个从源码排除，用下面指定的 info 配置
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dizhi.app
         PRODUCT_NAME: 地志
-        TARGETED_DEVICE_FAMILY: "1,2"
+        TARGETED_DEVICE_FAMILY: "1,2"  # iPhone and iPad
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ENABLE_BITCODE: NO
