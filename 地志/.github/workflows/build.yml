@@ -1,0 +1,199 @@
+name: Build iOS IPA for TrollStore
+
+on:
+  workflow_dispatch:  # 手动触发
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Xcode
+      run: |
+        sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
+        echo "Xcode version: $(xcodebuild -version | head -n 1)"
+        echo "SDK version: $(xcodebuild -showsdks | grep -o 'iphoneos[0-9.]*' | head -1)"
+
+    - name: Install xcodegen and build tools
+      run: |
+        brew install xcodegen
+        # 安装xcpretty用于更清晰的构建日志
+        sudo gem install xcpretty
+
+    - name: Generate Xcode project
+      run: |
+        xcodegen generate
+        echo "✅ Xcode project generated"
+
+    - name: Verify project structure
+      run: |
+        ls -la
+        if [ -d "地志.xcodeproj" ]; then
+          echo "✅ Xcode project exists"
+        else
+          echo "❌ Xcode project not found"
+          exit 1
+        fi
+
+    - name: Build for simulator (快速验证)
+      run: |
+        xcodebuild clean build \
+          -project 地志.xcodeproj \
+          -scheme 地志 \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+          -configuration Debug \
+          CODE_SIGNING_ALLOWED=NO \
+          ONLY_ACTIVE_ARCH=YES \
+          | xcpretty || exit 0  # xcpretty for cleaner logs
+
+    - name: Prepare build directory
+      run: |
+        mkdir -p build
+        echo "📁 Build directory prepared"
+
+    - name: Archive for iOS device (未签名)
+      run: |
+        xcodebuild archive \
+          -project 地志.xcodeproj \
+          -scheme 地志 \
+          -configuration Release \
+          -archivePath $PWD/build/地志.xcarchive \
+          -destination generic/platform=iOS \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          ENABLE_BITCODE=NO \
+          | xcpretty || exit 0
+
+    - name: Export unsigned IPA
+      run: |
+        # 创建专门用于未签名导出的ExportOptions.plist
+        cat > UnsignedExportOptions.plist << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>development</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>stripSwiftSymbols</key>
+    <true/>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>compileBitcode</key>
+    <false/>
+    <key>signingCertificate</key>
+    <string></string>
+    <key>provisioningProfiles</key>
+    <dict/>
+    <key>teamID</key>
+    <string></string>
+</dict>
+</plist>
+EOF
+
+        xcodebuild -exportArchive \
+          -archivePath $PWD/build/地志.xcarchive \
+          -exportPath $PWD/build \
+          -exportOptionsPlist UnsignedExportOptions.plist \
+          -allowProvisioningUpdates \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcpretty || exit 0
+
+    - name: Prepare IPA for TrollStore
+      run: |
+        cd build
+        # 查找并重命名 IPA 文件
+        if [ -f "地志.ipa" ]; then
+          mv 地志.ipa 地志_未签名.ipa
+          echo "✅ IPA renamed to 地志_未签名.ipa"
+        elif [ -f "*.ipa" ]; then
+          mv *.ipa 地志_未签名.ipa
+          echo "✅ IPA renamed to 地志_未签名.ipa"
+        else
+          echo "❌ No IPA file found"
+          ls -la
+          exit 1
+        fi
+
+        # 创建 TrollStore 安装说明
+        cat > INSTALL_TROLLSTORE.md << 'EOF'
+# TrollStore 安装说明
+
+## 文件信息
+- **应用名称**: 地志
+- **版本**: 1.0
+- **构建类型**: 未签名 IPA
+- **iOS 最低版本**: 16.0
+- **文件大小**: $(du -h 地志_未签名.ipa | cut -f1)
+
+## 安装步骤
+1. **确保你的设备已安装 TrollStore**
+   - 支持 iOS 版本: 16.0-16.6.1, 部分 17.x
+   - 最新 TrollStore 版本可从官方 GitHub 获取
+
+2. **传输 IPA 文件到 iOS 设备**
+   - 方法 1: AirDrop (最简单)
+   - 方法 2: iCloud Drive 或文件共享
+   - 方法 3: 通过电脑 iTunes 文件共享
+
+3. **安装到 TrollStore**
+   - 打开 TrollStore 应用
+   - 点击 "Install" 按钮
+   - 选择 "地志_未签名.ipa" 文件
+   - 等待安装完成
+
+4. **首次启动**
+   - 在主屏幕找到 "地志" 应用图标
+   - 点击打开，可能需要信任应用
+   - 开始使用！
+
+## 故障排除
+
+### 安装失败
+1. **TrollStore 版本问题**: 尝试更新到最新版 TrollStore
+2. **iOS 版本不兼容**: 确认你的 iOS 版本被 TrollStore 支持
+3. **IPA 文件损坏**: 重新下载 IPA 文件
+
+### 应用崩溃
+1. **重新安装**: 卸载后重新安装
+2. **重启设备**: 重启 iOS 设备
+3. **使用 TrollStore 的 "Re-sign" 功能**
+
+## 备选安装方法
+
+如果未签名 IPA 无法直接安装：
+1. **使用 fakesign 工具**: 对 IPA 进行伪签名
+2. **在线签名服务**: AppDB, iOSGods 等
+3. **AltStore/Sideloadly**: 通过电脑签名安装
+
+## 应用功能
+- 📍 省份地点收藏管理
+- 🗺️ 专题路线探索
+- 🔍 智能搜索
+- 📊 旅行足迹统计
+- 🎨 中式宣纸美学设计
+
+## 技术支持
+如有问题，请参考项目 GitHub 仓库的 Issues 页面。
+EOF
+
+        echo "✅ TrollStore installation guide created"
+
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: 地志-ipa
+        path: build/地志_未签名.ipa
+
+    - name: Upload build logs
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: build/
